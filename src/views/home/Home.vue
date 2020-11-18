@@ -1,14 +1,18 @@
 <template>
   <div id="home">
     <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
-    <home-swiper :banners="banners"/>
-    <recommend-view :recommends="recommends"/>
-    <feature-view></feature-view>
-    <tab-control class="tab-control" 
-      :titles="['流行', '新品', '精选']" 
-      @tabClick="tabClick"/>
-    <goods-list :goods="showGoods"/>
 
+    <scroll class="content" ref="scroll">
+      <home-swiper :banners="banners"/>
+      <recommend-view :recommends="recommends"/>
+      <feature-view></feature-view>
+      <tab-control class="tab-control" 
+        :titles="['流行', '新品', '精选']" 
+        @tabClick="tabClick"/>
+      <goods-list :goods="showGoods"/>
+    </scroll>
+    <back-top @click.native="backClick"/>
+    
   </div>
 </template>
 
@@ -22,9 +26,11 @@
   import TabControl from 'components/content/tabControl/TabControl'
   import GoodsList from 'components/content/goods/GoodsList'
   import GoodsListItem from 'components/content/goods/GoodsListItem'
-
+  import Scroll from 'components/common/scroll/Scroll'
+  import BackTop from 'components/content/backTop/BackTop'
 
   import {getHomeMultidata,getHomeGoods} from "network/home"
+  
   
 export default {
   name: "Home",
@@ -35,7 +41,9 @@ export default {
     NavBar,
     TabControl,
     GoodsList,
-    GoodsListItem
+    GoodsListItem,
+    Scroll,
+    BackTop
   },
   data() {
     return {
@@ -91,13 +99,18 @@ export default {
       this.goods[type].list.push(...res.data.list)
       this.goods[type].page += 1
       })
+    },
+    backClick() {
+      this.$refs.scroll.scrollTo(0,0)
+      
     }
   }
 }
 </script>
 
-<style>
+<style scoped>
   #home {
+    padding-top: 44px;
 		position: relative;
 		height: 100vh;
   } 
@@ -116,6 +129,15 @@ export default {
   .tab-control {
     position: sticky;
     top: 44px;
-    z-index: 9px;
+    z-index: 9;
+  }
+
+  .content { 
+    overflow: hidden;
+    position: absolute;
+    top: 44px;
+    bottom: 49px;
+    left: 0;
+    right: 0;
   }
 </style>
