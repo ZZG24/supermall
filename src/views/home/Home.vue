@@ -2,7 +2,12 @@
   <div id="home">
     <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
 
-    <scroll class="content" ref="scroll" :probe-type="3">
+    <scroll class="content"
+            ref="scroll"
+            :probe-type="3" 
+            @scroll="contentScroll"
+            :pull-up-load="true"
+            @pullingUp="loadMore">
       <home-swiper :banners="banners"/>
       <recommend-view :recommends="recommends"/>
       <feature-view></feature-view>
@@ -11,7 +16,7 @@
         @tabClick="tabClick"/>
       <goods-list :goods="showGoods"/>
     </scroll>
-    <back-top @click.native="backClick"/>
+    <back-top @click.native="backClick" v-show="isShowBackTop"/>
     
   </div>
 </template>
@@ -29,8 +34,8 @@
   import Scroll from 'components/common/scroll/Scroll'
   import BackTop from 'components/content/backTop/BackTop'
 
-  import {getHomeMultidata,getHomeGoods} from "network/home"
-  
+  import {getHomeMultidata,getHomeGoods} from 'network/home'
+  import {debounce} from 'common/utils'
   
 export default {
   name: "Home",
@@ -54,7 +59,8 @@ export default {
         'new': {page: 0, list: []},
         'sell': {page: 0, list: []}
       },
-      currentType: 'pop'
+      currentType: 'pop',
+      isShowBackTop: false
     }
   },
   computed: {
@@ -69,8 +75,20 @@ export default {
     this.getHomeGoods('new')
     this.getHomeGoods('sell')
   },
+  mounted() {
+    const refresh = debounce(this.$refs.scroll.refresh, 500)
+     //监听item中图片加载完成
+    this.$bus.$on('itemImageLoad', () =>{
+      // this.$refs.scroll.refresh()    
+      refresh()
+    })
+  },
   methods: {
     // 事件监听的相关方法
+    loadMore() {
+      // console.log('---');
+      this.getHomeGoods(this.currentType)
+    },
     tabClick(index) {
       switch(index) {
         case 0:
@@ -84,6 +102,14 @@ export default {
           break
       }     
     },
+    backClick() {
+      this.$refs.scroll.scrollTo(0,0)
+      
+    },
+    contentScroll(position) {
+      this.isShowBackTop = (-position.y) > 1000
+      
+    },
     // 网络请求相关的方法
     getHomeMultidata() {
       getHomeMultidata().then(res => {
@@ -95,14 +121,13 @@ export default {
     },
     getHomeGoods(type) {
       const page = this.goods[type].page + 1
-      getHomeGoods(type,page).then(res =>{
+      getHomeGoods(type,page).then(res => {
       this.goods[type].list.push(...res.data.list)
       this.goods[type].page += 1
+
+      //完成上啦加载更多
+      this.$refs.scroll.finishPullUp()
       })
-    },
-    backClick() {
-      this.$refs.scroll.scrollTo(0,0)
-      
     }
   }
 }
